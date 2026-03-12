@@ -13,8 +13,14 @@ export interface Region {
 }
 
 export interface MapVersion {
+    id: string;
     version: string;
     status: string;
     created_at: string;
+    creator?: string;
+    utm_zone?: string;
+    mgrs_zone?: string;
+    coordinate_system?: string;
+    description?: string;
     downloads: Record<string, string>;
 }

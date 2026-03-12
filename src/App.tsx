@@ -70,7 +70,7 @@ function App() {
       setNewRegionCode('');
       await fetchRegions();
       setSelectedRegion(res.data);
-    } catch (err: unknown) {
+    } catch {
       alert('Failed to create region.');
     }
   };
@@ -99,7 +99,7 @@ function App() {
       setShowUploadModal(false);
       resetUploadForm();
       fetchVersions(selectedRegion.code);
-    } catch (err: unknown) {
+    } catch {
       alert('Upload failed. Check backend logs.');
     } finally {
       setIsUploading(false);

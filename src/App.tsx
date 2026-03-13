@@ -2,11 +2,15 @@ import React, { useEffect, useState } from 'react';
 import { api } from './api';
 import type { Region, MapVersion } from './api';
 import MapPreview from './MapPreview';
+import { Menu, MapPin } from 'lucide-react';
 
 function App() {
   const [regions, setRegions] = useState<Region[]>([]);
   const [selectedRegion, setSelectedRegion] = useState<Region | null>(null);
   const [versions, setVersions] = useState<MapVersion[]>([]);
+  
+  // Navigation State
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   
   // Modals state
   const [showUploadModal, setShowUploadModal] = useState(false);
@@ -130,87 +134,114 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col md:flex-row">
-      {/* Sidebar */}
-      <aside className="w-full md:w-72 bg-white border-r border-gray-200 flex flex-col">
-        <div className="p-6 border-b border-gray-200 flex flex-col items-center">
-          <button 
-            onClick={() => {
-              setIsHomePage(true);
-              setSelectedRegion(null);
-            }}
-            className="hover:opacity-80 transition-opacity"
-          >
-            <img src="/imgs/admap.png" alt="Admap Logo" className="h-12 w-auto object-contain" />
-          </button>
-        </div>
-        
-        <div className="p-4 flex-1 overflow-y-auto">
-          <div className="flex items-center justify-between mb-2 px-2">
-            <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">Regions</span>
+    <div className="h-screen w-full bg-white text-gray-900 font-sans flex overflow-hidden">
+      {/* Sidebar Overlay on Mobile */}
+      {!isSidebarOpen && (
+        <div className="md:hidden fixed inset-0 bg-black/20 z-40 transition-opacity" onClick={() => setIsSidebarOpen(true)} />
+      )}
+
+      {/* Basic Light Sidebar */}
+      <aside 
+        className={`bg-gray-50 border-r border-gray-200 flex flex-col transition-all duration-200 ease-in-out z-50 shrink-0
+          ${isSidebarOpen ? 'w-[260px]' : 'w-0 border-r-0'}
+          fixed md:relative h-full
+        `}
+      >
+        <div className="w-[260px] h-full flex flex-col bg-gray-50 opacity-100 overflow-hidden">
+          
+          <div className="p-4 border-b border-gray-200 flex items-center justify-between">
             <button 
-              onClick={() => setShowRegionModal(true)}
-              className="text-gray-400 hover:text-gray-900 transition-colors"
-              title="Add Region"
+              onClick={() => {
+                setIsHomePage(true);
+                setSelectedRegion(null);
+                if (window.innerWidth < 768) setIsSidebarOpen(false);
+              }}
+              className="flex items-center justify-center w-full hover:opacity-80 transition-opacity"
             >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+              <img src="/imgs/admap.png" alt="Admap Logo" className="h-10 w-auto object-contain" />
+            </button>
+            <button 
+              onClick={() => setIsSidebarOpen(false)}
+              className="md:hidden p-2 hover:bg-gray-200 rounded-md text-gray-500 hover:text-gray-900"
+            >
+              <Menu className="w-5 h-5" />
             </button>
           </div>
-          <nav className="space-y-1">
-            {regions.length === 0 ? (
-              <p className="text-sm text-gray-400 px-2 mt-4">No regions found.</p>
-            ) : (
-              regions.map((r: Region) => (
-                <button
-                  key={r.id}
-                  onClick={() => {
-                    setSelectedRegion(r);
-                    setIsHomePage(false);
-                  }}
-                  className={`w-full text-left px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                    !isHomePage && selectedRegion?.id === r.id 
-                      ? 'bg-gray-100 text-gray-900' 
-                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                  }`}
-                >
-                  {r.name}
-                </button>
-              ))
-            )}
-          </nav>
+        
+          <div className="flex-1 overflow-y-auto p-4">
+            <div className="flex items-center justify-between mb-4 px-2 group">
+              <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Regions</span>
+              <button 
+                onClick={() => setShowRegionModal(true)}
+                className="text-gray-400 hover:text-gray-900 transition-colors p-1 hover:bg-gray-200 rounded-md"
+                title="Add Region"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+              </button>
+            </div>
+            
+            <nav className="space-y-1">
+              {regions.length === 0 ? (
+                <p className="text-sm text-gray-500 px-2 mt-2">No regions found.</p>
+              ) : (
+                regions.map((r: Region) => (
+                  <button
+                    key={r.id}
+                    onClick={() => {
+                      setSelectedRegion(r);
+                      setIsHomePage(false);
+                      if (window.innerWidth < 768) setIsSidebarOpen(false);
+                    }}
+                    className={`w-full text-left flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      !isHomePage && selectedRegion?.id === r.id 
+                        ? 'bg-blue-50 text-blue-700' 
+                        : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                    }`}
+                  >
+                    <MapPin className="w-4 h-4 shrink-0 opacity-70" />
+                    <span className="truncate">{r.name}</span>
+                  </button>
+                ))
+              )}
+            </nav>
+          </div>
         </div>
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col min-h-0 bg-gray-50/50">
+      <main className="flex-1 flex flex-col min-h-0 bg-white relative overflow-hidden h-full">
+        {/* Toggle Button for Desktop/Mobile when Sidebar is closed */}
+        <div className="absolute top-4 left-4 z-30">
+          <button 
+            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+            className={`p-2 bg-white border border-gray-200 shadow-sm hover:bg-gray-50 rounded-lg text-gray-600 transition-all ${isSidebarOpen ? 'opacity-0 pointer-events-none -translate-x-5' : 'opacity-100 translate-x-0'}`}
+            title="Toggle Sidebar"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+        </div>
+
         {isHomePage ? (
-          <div className="flex-1 flex flex-col items-center justify-center p-8 bg-white">
-            <div className="text-center space-y-8 animate-in fade-in zoom-in duration-700">
-              <img src="/imgs/logo.png" alt="Logo" className="w-48 h-auto mx-auto drop-shadow-xl" />
-              <div className="space-y-4">
-                <h1 className="text-4xl font-bold text-gray-900 tracking-tight">Trang chủ</h1>
-                <p className="text-lg text-gray-600 max-w-md mx-auto leading-relaxed">
-                  Chào mừng bạn đến với hệ thống quản lý bản đồ. 
-                  Chọn một khu vực từ thanh bên để bắt đầu làm việc.
-                </p>
-              </div>
-              <div className="flex gap-4 justify-center pt-4">
-                <div className="h-1 w-12 bg-gray-200 rounded-full"></div>
-                <div className="h-1 w-12 bg-gray-900 rounded-full"></div>
-                <div className="h-1 w-12 bg-gray-200 rounded-full"></div>
-              </div>
+          <div className="flex-1 flex flex-col items-center justify-center p-8 bg-gray-50">
+            <div className="text-center max-w-xl">
+              <h1 className="text-4xl font-bold text-gray-900 mb-4">
+                AD Map Management
+              </h1>
+              <p className="text-gray-500 mb-8">
+                Welcome to the Autonomous Driving Map Management System. Please select a region from the sidebar or upload a new map dataset to begin mapping and viewing point clouds.
+              </p>
             </div>
           </div>
         ) : selectedRegion ? (
           <>
-            <header className="bg-white border-b border-gray-200 px-8 py-6 max-w-5xl mx-auto w-full flex items-center justify-between">
+            <header className={`bg-white border-b border-slate-200 px-8 py-6 max-w-6xl mx-auto w-full flex items-center justify-between transition-all duration-300 ${!isSidebarOpen ? 'pl-20 md:pl-20' : ''}`}>
               <div>
-                <h2 className="text-2xl font-semibold text-gray-900">{selectedRegion.name}</h2>
-                <div className="text-sm text-gray-500 font-mono mt-1">{selectedRegion.code}</div>
+                <h2 className="text-2xl font-bold text-slate-900 tracking-tight">{selectedRegion.name}</h2>
+                <div className="text-sm text-slate-500 font-mono mt-1 font-medium">{selectedRegion.code}</div>
               </div>
               <button 
                 onClick={() => setShowUploadModal(true)}
-                className="bg-gray-900 hover:bg-gray-800 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
+                className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-sm shadow-indigo-200 transition-all hover:-translate-y-0.5"
               >
                 Upload Version
               </button>

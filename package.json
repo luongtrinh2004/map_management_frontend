@@ -10,8 +10,14 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@deck.gl/core": "^9.2.11",
+    "@deck.gl/geo-layers": "^9.2.11",
     "@deck.gl/layers": "^9.2.11",
+    "@deck.gl/mapbox": "^9.2.11",
+    "@deck.gl/mesh-layers": "^9.2.11",
     "@deck.gl/react": "^9.2.11",
+    "@loaders.gl/core": "^4.3.4",
+    "@loaders.gl/pcd": "^4.3.4",
     "@tailwindcss/vite": "^4.2.1",
     "axios": "^1.13.6",
     "lucide-react": "^0.577.0",

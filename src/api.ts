@@ -24,3 +24,6 @@ export interface MapVersion {
     description?: string;
     downloads: Record<string, string>;
 }
+
+export const getLaneletPreviewUrl = (vId: string) => `${API_URL}/previews/${vId}/lanelet`;
+export const getPcdPreviewUrl = (vId: string) => `${API_URL}/downloads/${vId}/PCD`;

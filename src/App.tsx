@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { api } from './api';
 import type { Region, MapVersion } from './api';
+import MapPreview from './MapPreview';
 
 function App() {
   const [regions, setRegions] = useState<Region[]>([]);
@@ -10,6 +11,7 @@ function App() {
   // Modals state
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [showRegionModal, setShowRegionModal] = useState(false);
+  const [previewVersion, setPreviewVersion] = useState<MapVersion | null>(null);
   const [isHomePage, setIsHomePage] = useState(true);
 
   // Region Form State
@@ -78,7 +80,8 @@ function App() {
 
   const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedRegion) return;
+    if (!selectedRegion || isUploading) return;
+    setIsUploading(true);
     
     // Client-side duplicate check
     const isDuplicate = versions.some(v => v.version === versionName);
@@ -254,6 +257,12 @@ function App() {
                               Download {type}
                             </a>
                           ))}
+                          <button 
+                            onClick={() => setPreviewVersion(v)}
+                            className="inline-flex items-center px-3 py-1.5 border border-blue-200 shadow-sm text-xs font-medium rounded text-blue-700 bg-blue-50 hover:bg-blue-100 focus:outline-none transition-colors"
+                          >
+                            Preview Map
+                          </button>
                         </div>
                       </div>
                       
@@ -454,6 +463,15 @@ function App() {
             </form>
           </div>
         </div>
+      )}
+
+      {/* Map Preview Modal */}
+      {previewVersion && (
+        <MapPreview 
+          versionId={previewVersion.id}
+          versionName={previewVersion.version}
+          onClose={() => setPreviewVersion(null)}
+        />
       )}
 
     </div>

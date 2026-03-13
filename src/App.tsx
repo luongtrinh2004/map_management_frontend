@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { api } from './api';
-import type { Region, MapVersion } from './api';
+import { api, type Region, type MapVersion, type Stats } from './api';
 import MapPreview from './MapPreview';
-import { Menu, MapPin } from 'lucide-react';
+import { MapPin, Layers, Clock, Plus, Activity, ChevronLeft, ChevronRight } from 'lucide-react';
 
 function App() {
   const [regions, setRegions] = useState<Region[]>([]);
@@ -17,6 +16,7 @@ function App() {
   const [showRegionModal, setShowRegionModal] = useState(false);
   const [previewVersion, setPreviewVersion] = useState<MapVersion | null>(null);
   const [isHomePage, setIsHomePage] = useState(true);
+  const [stats, setStats] = useState<Stats | null>(null);
 
   // Region Form State
   const [newRegionName, setNewRegionName] = useState('');
@@ -35,8 +35,18 @@ function App() {
 
   useEffect(() => {
     fetchRegions();
+    fetchStats();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const fetchStats = async () => {
+    try {
+      const res = await api.get<Stats>('/stats');
+      setStats(res.data);
+    } catch (err) {
+      console.error('Failed to fetch stats', err);
+    }
+  };
 
   useEffect(() => {
     if (selectedRegion) {
@@ -76,6 +86,7 @@ function App() {
       setNewRegionName('');
       setNewRegionCode('');
       await fetchRegions();
+      await fetchStats();
       setSelectedRegion(res.data);
     } catch {
       alert('Failed to create region.');
@@ -93,7 +104,7 @@ function App() {
     }
 
     // Client-side duplicate check
-    const isDuplicate = versions.some(v => v.version.toLowerCase() === actualVersionName.toLowerCase());
+    const isDuplicate = versions.some((v: MapVersion) => v.version.toLowerCase() === actualVersionName.toLowerCase());
     if (isDuplicate) {
       alert(`Version "${actualVersionName}" already exists. Please use a unique version name.`);
       setIsUploading(false);
@@ -119,6 +130,7 @@ function App() {
       setShowUploadModal(false);
       resetUploadForm();
       fetchVersions(selectedRegion.code);
+      fetchStats();
     } catch (err: any) {
       const errorMsg = err.response?.data?.message || err.response?.data?.error || 'Upload failed. Check backend logs.';
       alert(errorMsg);
@@ -145,50 +157,51 @@ function App() {
         <div className="md:hidden fixed inset-0 bg-black/20 z-40 transition-opacity" onClick={() => setIsSidebarOpen(true)} />
       )}
 
-      {/* Basic Light Sidebar */}
       <aside 
-        className={`bg-gray-50 border-r border-gray-200 flex flex-col transition-all duration-200 ease-in-out z-50 shrink-0
-          ${isSidebarOpen ? 'w-[260px]' : 'w-0 border-r-0'}
+        className={`bg-gray-50 border-r border-gray-200 flex flex-col transition-all duration-300 ease-in-out z-50 shrink-0 overflow-hidden
+          ${isSidebarOpen ? 'w-[300px]' : 'w-[64px]'}
           fixed md:relative h-full
         `}
       >
-        <div className="w-[260px] h-full flex flex-col bg-gray-50 opacity-100 overflow-hidden">
+        <div className="w-[300px] h-full flex flex-col bg-gray-50">
           
-          <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+          <div className="h-16 border-b border-gray-200/60 flex items-center relative">
+            <div className={`flex items-center justify-between w-full px-4 h-full transition-all duration-300 ${isSidebarOpen ? 'opacity-100' : 'opacity-0'}`}>
+              <button 
+                onClick={() => {
+                  setIsHomePage(true);
+                  setSelectedRegion(null);
+                }}
+                className="flex items-center"
+              >
+                <img src="/imgs/admap.png" alt="Admap Logo" className="h-6 w-auto object-contain" />
+              </button>
+            </div>
+
             <button 
-              onClick={() => {
-                setIsHomePage(true);
-                setSelectedRegion(null);
-                if (window.innerWidth < 768) setIsSidebarOpen(false);
-              }}
-              className="flex items-center justify-center w-full hover:opacity-80 transition-opacity"
+              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+              className={`flex items-center justify-center bg-white border border-gray-200 text-gray-400 hover:text-indigo-600 rounded-full transition-all shadow-sm hover:shadow-md hover:scale-105 active:scale-95 z-50
+                ${isSidebarOpen ? 'w-8 h-8 absolute right-4' : 'w-10 h-10 absolute left-[12px]'}
+              `}
+              title={isSidebarOpen ? "Collapse Sidebar" : "Expand Sidebar"}
             >
-              <img src="/imgs/admap.png" alt="Admap Logo" className="h-10 w-auto object-contain" />
-            </button>
-            <button 
-              onClick={() => setIsSidebarOpen(false)}
-              className="md:hidden p-2 hover:bg-gray-200 rounded-md text-gray-500 hover:text-gray-900"
-            >
-              <Menu className="w-5 h-5" />
-            </button>
-            <button 
-              onClick={() => setIsSidebarOpen(false)}
-              className="p-2 hover:bg-gray-200 rounded-md text-gray-500 hover:text-gray-900 transition-colors"
-              title="Close Sidebar"
-            >
-              <Menu className="w-5 h-5" />
+              {isSidebarOpen ? (
+                <ChevronLeft className="w-5 h-5" />
+              ) : (
+                <ChevronRight className="w-6 h-6" />
+              )}
             </button>
           </div>
         
-          <div className="flex-1 overflow-y-auto p-4">
+          <div className={`flex-1 overflow-y-auto p-4 transition-all duration-300 ${isSidebarOpen ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-10 pointer-events-none'}`}>
             <div className="flex items-center justify-between mb-4 px-2 group">
-              <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Regions</span>
+              <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Regions</span>
               <button 
                 onClick={() => setShowRegionModal(true)}
-                className="text-gray-400 hover:text-gray-900 transition-colors p-1 hover:bg-gray-200 rounded-md"
+                className="text-gray-400 hover:text-indigo-600 transition-colors p-1 hover:bg-white border border-transparent hover:border-gray-100 rounded-md shadow-sm active:scale-90"
                 title="Add Region"
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                <Plus className="w-4 h-4" />
               </button>
             </div>
             
@@ -204,13 +217,13 @@ function App() {
                       setIsHomePage(false);
                       if (window.innerWidth < 768) setIsSidebarOpen(false);
                     }}
-                    className={`w-full text-left flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    className={`w-full text-left flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all ${
                       !isHomePage && selectedRegion?.id === r.id 
-                        ? 'bg-blue-50 text-blue-700' 
-                        : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                        ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-100 scale-105' 
+                        : 'text-gray-600 hover:bg-white hover:shadow-sm hover:text-indigo-600'
                     }`}
                   >
-                    <MapPin className="w-4 h-4 shrink-0 opacity-70" />
+                    <MapPin className={`w-4 h-4 shrink-0 ${!isHomePage && selectedRegion?.id === r.id ? 'text-white' : 'text-gray-400'}`} />
                     <span className="truncate">{r.name}</span>
                   </button>
                 ))
@@ -221,27 +234,66 @@ function App() {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col min-h-0 bg-white relative overflow-hidden h-full">
+      <main className="flex-1 flex flex-col min-h-0 bg-white relative overflow-hidden h-full transition-all duration-300 ease-in-out">
         {/* Toggle Button for Desktop/Mobile when Sidebar is closed */}
-        <div className="absolute top-4 left-4 z-30">
-          <button 
-            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-            className={`p-2 bg-white border border-gray-200 shadow-sm hover:bg-gray-50 rounded-lg text-gray-600 transition-all ${isSidebarOpen ? 'opacity-0 pointer-events-none -translate-x-5' : 'opacity-100 translate-x-0'}`}
-            title="Toggle Sidebar"
-          >
-            <Menu className="w-5 h-5" />
-          </button>
-        </div>
+        {/* Unified with sidebar toggle */}
 
         {isHomePage ? (
-          <div className="flex-1 flex flex-col items-center justify-center p-8 bg-gray-50">
-            <div className="text-center max-w-xl">
-              <h1 className="text-4xl font-bold text-gray-900 mb-4">
-                AD Map Management
-              </h1>
-              <p className="text-gray-500 mb-8">
-                Welcome to the Autonomous Driving Map Management System. Please select a region from the sidebar or upload a new map dataset to begin mapping and viewing point clouds.
-              </p>
+          <div className="flex-1 flex flex-col items-center justify-center p-8 bg-white overflow-y-auto">
+            <div className="max-w-4xl w-full">
+              <div className="text-center mb-12">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 text-indigo-600 text-xs font-bold uppercase tracking-wider mb-4">
+                  <Activity className="w-3 h-3" />
+                  System Dashboard
+                </div>
+                <h1 className="text-5xl font-black text-gray-900 mb-4 tracking-tight">
+                  Map Portal <span className="text-indigo-600">Overview</span>
+                </h1>
+                <p className="text-lg text-gray-500 max-w-2xl mx-auto">
+                  Monitor and manage your autonomous driving map ecosystem. Access high-precision Lanelet2 and Point Cloud datasets across all regions.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+                <div className="bg-white border border-gray-100 shadow-sm rounded-2xl p-6 transition-all hover:shadow-md hover:border-indigo-100 group">
+                  <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 mb-4 group-hover:scale-110 transition-transform">
+                    <MapPin className="w-6 h-6" />
+                  </div>
+                  <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-1">Total Regions</h3>
+                  <div className="text-3xl font-black text-gray-900">{stats?.totalRegions || regions.length}</div>
+                </div>
+
+                <div className="bg-white border border-gray-100 shadow-sm rounded-2xl p-6 transition-all hover:shadow-md hover:border-indigo-100 group">
+                  <div className="w-12 h-12 rounded-xl bg-purple-50 flex items-center justify-center text-purple-600 mb-4 group-hover:scale-110 transition-transform">
+                    <Layers className="w-6 h-6" />
+                  </div>
+                  <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-1">Total Versions</h3>
+                  <div className="text-3xl font-black text-gray-900">{stats?.totalVersions || 0}</div>
+                </div>
+
+                <div className="bg-white border border-gray-100 shadow-sm rounded-2xl p-6 transition-all hover:shadow-md hover:border-indigo-100 group">
+                  <div className="w-12 h-12 rounded-xl bg-green-50 flex items-center justify-center text-green-600 mb-4 group-hover:scale-110 transition-transform">
+                    <Clock className="w-6 h-6" />
+                  </div>
+                  <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-1">Last Updated</h3>
+                  <div className="text-xl font-bold text-gray-900 mt-1">
+                    {stats?.lastUpdated ? new Date(stats.lastUpdated).toLocaleDateString() : 'No updates'}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex flex-col items-center gap-4">
+                <p className="text-sm text-gray-400">Quick Actions</p>
+                <div className="flex gap-4">
+                  <button 
+                    onClick={() => setShowRegionModal(true)}
+                    className="flex items-center gap-2 px-6 py-3 bg-gray-900 text-white rounded-xl font-bold hover:bg-gray-800 transition-all hover:-translate-y-1 shadow-lg shadow-gray-200"
+                  >
+                    <Plus className="w-5 h-5" />
+                    New Region
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         ) : selectedRegion ? (

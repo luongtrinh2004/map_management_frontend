@@ -10,6 +10,7 @@ function App() {
   // Modals state
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [showRegionModal, setShowRegionModal] = useState(false);
+  const [isHomePage, setIsHomePage] = useState(true);
 
   // Region Form State
   const [newRegionName, setNewRegionName] = useState('');
@@ -79,7 +80,14 @@ function App() {
     e.preventDefault();
     if (!selectedRegion) return;
     
-    setIsUploading(true);
+    // Client-side duplicate check
+    const isDuplicate = versions.some(v => v.version === versionName);
+    if (isDuplicate) {
+      alert(`Version "${versionName}" already exists in this region. Please use a unique version name.`);
+      setIsUploading(false);
+      return;
+    }
+
     const formData = new FormData();
     formData.append('region_code', selectedRegion.code);
     formData.append('version_name', versionName);
@@ -99,8 +107,9 @@ function App() {
       setShowUploadModal(false);
       resetUploadForm();
       fetchVersions(selectedRegion.code);
-    } catch {
-      alert('Upload failed. Check backend logs.');
+    } catch (err: any) {
+      const errorMsg = err.response?.data?.message || err.response?.data?.error || 'Upload failed. Check backend logs.';
+      alert(errorMsg);
     } finally {
       setIsUploading(false);
     }
@@ -120,10 +129,17 @@ function App() {
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col md:flex-row">
       {/* Sidebar */}
-      <aside className="w-full md:w-64 bg-white border-r border-gray-200 flex flex-col">
-        <div className="p-6 border-b border-gray-200">
-          <h1 className="text-xl font-semibold tracking-tight text-gray-900">Map Management System</h1>
-          <p className="text-sm text-gray-500 mt-1">Management Console</p>
+      <aside className="w-full md:w-72 bg-white border-r border-gray-200 flex flex-col">
+        <div className="p-6 border-b border-gray-200 flex flex-col items-center">
+          <button 
+            onClick={() => {
+              setIsHomePage(true);
+              setSelectedRegion(null);
+            }}
+            className="hover:opacity-80 transition-opacity"
+          >
+            <img src="/imgs/admap.png" alt="Admap Logo" className="h-12 w-auto object-contain" />
+          </button>
         </div>
         
         <div className="p-4 flex-1 overflow-y-auto">
@@ -144,9 +160,12 @@ function App() {
               regions.map((r: Region) => (
                 <button
                   key={r.id}
-                  onClick={() => setSelectedRegion(r)}
+                  onClick={() => {
+                    setSelectedRegion(r);
+                    setIsHomePage(false);
+                  }}
                   className={`w-full text-left px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                    selectedRegion?.id === r.id 
+                    !isHomePage && selectedRegion?.id === r.id 
                       ? 'bg-gray-100 text-gray-900' 
                       : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                   }`}
@@ -161,7 +180,25 @@ function App() {
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col min-h-0 bg-gray-50/50">
-        {selectedRegion ? (
+        {isHomePage ? (
+          <div className="flex-1 flex flex-col items-center justify-center p-8 bg-white">
+            <div className="text-center space-y-8 animate-in fade-in zoom-in duration-700">
+              <img src="/imgs/logo.png" alt="Logo" className="w-48 h-auto mx-auto drop-shadow-xl" />
+              <div className="space-y-4">
+                <h1 className="text-4xl font-bold text-gray-900 tracking-tight">Trang chủ</h1>
+                <p className="text-lg text-gray-600 max-w-md mx-auto leading-relaxed">
+                  Chào mừng bạn đến với hệ thống quản lý bản đồ. 
+                  Chọn một khu vực từ thanh bên để bắt đầu làm việc.
+                </p>
+              </div>
+              <div className="flex gap-4 justify-center pt-4">
+                <div className="h-1 w-12 bg-gray-200 rounded-full"></div>
+                <div className="h-1 w-12 bg-gray-900 rounded-full"></div>
+                <div className="h-1 w-12 bg-gray-200 rounded-full"></div>
+              </div>
+            </div>
+          </div>
+        ) : selectedRegion ? (
           <>
             <header className="bg-white border-b border-gray-200 px-8 py-6 max-w-5xl mx-auto w-full flex items-center justify-between">
               <div>
@@ -191,7 +228,7 @@ function App() {
               ) : (
                 <div className="space-y-4">
                   {versions.map((v: MapVersion, i: number) => (
-                    <div key={i} className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+                    <div key={i} className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
                       <div className="flex items-start justify-between">
                         <div>
                           <div className="flex items-center gap-3">
@@ -212,7 +249,7 @@ function App() {
                               key={type} 
                               href={url} 
                               download
-                              className="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                              className="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
                             >
                               Download {type}
                             </a>
@@ -251,7 +288,7 @@ function App() {
             </div>
           </>
         ) : (
-          <div className="flex-1 flex items-center justify-center p-8">
+          <div className="flex-1 flex items-center justify-center p-8 bg-gray-50/50">
             <div className="text-center text-gray-500 max-w-sm">
               <h2 className="text-lg font-medium text-gray-900">No Region Selected</h2>
               <p className="mt-2 text-sm">Select a region from the sidebar or create a new one to view and manage maps.</p>

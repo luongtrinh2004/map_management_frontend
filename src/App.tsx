@@ -87,17 +87,22 @@ function App() {
     if (!selectedRegion || isUploading) return;
     setIsUploading(true);
     
+    let actualVersionName = versionName;
+    if (!/^v/i.test(actualVersionName)) {
+      actualVersionName = 'v' + actualVersionName;
+    }
+
     // Client-side duplicate check
-    const isDuplicate = versions.some(v => v.version === versionName);
+    const isDuplicate = versions.some(v => v.version.toLowerCase() === actualVersionName.toLowerCase());
     if (isDuplicate) {
-      alert(`Version "${versionName}" already exists in this region. Please use a unique version name.`);
+      alert(`Version "${actualVersionName}" already exists. Please use a unique version name.`);
       setIsUploading(false);
       return;
     }
 
     const formData = new FormData();
     formData.append('region_code', selectedRegion.code);
-    formData.append('version_name', versionName);
+    formData.append('version_name', actualVersionName);
     formData.append('description', description);
     formData.append('creator', creator);
     formData.append('utm_zone', utmZone);
@@ -163,6 +168,13 @@ function App() {
             <button 
               onClick={() => setIsSidebarOpen(false)}
               className="md:hidden p-2 hover:bg-gray-200 rounded-md text-gray-500 hover:text-gray-900"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+            <button 
+              onClick={() => setIsSidebarOpen(false)}
+              className="p-2 hover:bg-gray-200 rounded-md text-gray-500 hover:text-gray-900 transition-colors"
+              title="Close Sidebar"
             >
               <Menu className="w-5 h-5" />
             </button>
@@ -316,11 +328,31 @@ function App() {
                         </div>
                       </div>
 
-                      {v.description && (
-                        <div className="mt-3 text-sm text-gray-600 px-1">
-                          {v.description}
+                      {/* Phase 3: Smart Diff & Impact Analysis (Mock) */}
+                      <div className="mt-4 bg-blue-50/50 border border-blue-100 p-3 rounded-lg">
+                        <div className="flex items-center gap-2 mb-2">
+                          <svg className="w-4 h-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                          <span className="text-xs font-bold text-blue-900 uppercase tracking-wider">Smart Diff Analysis</span>
                         </div>
-                      )}
+                        <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
+                          {v.description ? <li>{v.description}</li> : <li>Sự thay đổi dữ liệu: Đã phát hiện 02 làn đường mới, mật độ PCD thay đổi 15%.</li>}
+                          <li>Trạng thái liên kết: OSM và PCD đã được align thành công.</li>
+                        </ul>
+                      </div>
+
+                      {/* Phase 3: Release & Rollback actions */}
+                      <div className="mt-4 flex items-center justify-end gap-3 pt-4 border-t border-gray-100">
+                        {v.status !== 'STABLE' && (
+                          <button className="text-sm font-medium text-green-600 hover:text-green-700 hover:bg-green-50 px-3 py-1.5 rounded-md transition-colors border border-transparent hover:border-green-200">
+                            ✓ Mark as Stable
+                          </button>
+                        )}
+                        {v.status === 'STABLE' && (
+                          <button className="text-sm font-medium text-orange-600 hover:text-orange-700 hover:bg-orange-50 px-3 py-1.5 rounded-md transition-colors border border-transparent hover:border-orange-200">
+                            ↺ Rollback from this
+                          </button>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -353,7 +385,7 @@ function App() {
                 <input 
                   type="text" 
                   required
-                  placeholder="e.g. v1.1"
+                  placeholder="e.g. 1.1 or v1.1"
                   className="w-full border-gray-300 border rounded-md shadow-sm py-2 px-3 text-sm focus:border-blue-500 focus:ring-blue-500"
                   value={versionName} 
                   onChange={(e) => setVersionName(e.target.value)} 
@@ -413,6 +445,9 @@ function App() {
               </div>
               <div className="space-y-3">
                 <label className="block text-sm font-medium text-gray-700">Map Files</label>
+                <p className="text-[10px] text-gray-500 -mt-1 mb-1 italic">
+                  * If not uploaded, the latest available version's files will be inherited.
+                </p>
                 <div className="flex items-center gap-3">
                   <div className="flex-1">
                     <label className={`flex justify-center flex-col items-center w-full h-16 px-4 transition bg-white border-2 border-gray-300 border-dashed rounded-md appearance-none cursor-pointer hover:border-gray-400 focus:outline-none ${osmFile ? 'border-blue-500 bg-blue-50' : ''}`}>

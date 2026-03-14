@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { api, type Region, type MapVersion, type Stats } from './api';
 import MapPreview from './MapPreview';
-import { MapPin, Layers, Clock, Plus, Activity, ChevronLeft, ChevronRight } from 'lucide-react';
+import { MapPin, Layers, Clock, Plus, Activity, ChevronLeft, ChevronRight, AlertTriangle } from 'lucide-react';
 
 function App() {
   const [regions, setRegions] = useState<Region[]>([]);
@@ -32,6 +32,57 @@ function App() {
   const [osmFile, setOsmFile] = useState<File | null>(null);
   const [pcdFile, setPcdFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [versionError, setVersionError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!versionName) {
+      setVersionError(null);
+      return;
+    }
+    let actualVersionName = versionName;
+    if (!/^v/i.test(actualVersionName)) {
+      actualVersionName = 'v' + actualVersionName;
+    }
+
+    const isDuplicate = versions.some((v: MapVersion) => v.version.toLowerCase() === actualVersionName.toLowerCase());
+    if (isDuplicate) {
+      setVersionError(`Version "${actualVersionName}" already exists.`);
+      return;
+    }
+
+    if (versions.length > 0) {
+      const parse = (v: string) => v.replace(/^v/i, '').split('.').map(Number);
+      
+      const highestVersion = [...versions].reduce((highest, current) => {
+        const pCur = parse(current.version);
+        const pHigh = parse(highest.version);
+        for (let i = 0; i < Math.max(pCur.length, pHigh.length); i++) {
+          const n1 = pCur[i] || 0;
+          const n2 = pHigh[i] || 0;
+          if (n1 > n2) return current;
+          if (n1 < n2) return highest;
+        }
+        return highest;
+      }, versions[0]);
+
+      const pNew = parse(actualVersionName);
+      const pHigh = parse(highestVersion.version);
+      let isLower = false;
+      for (let i = 0; i < Math.max(pNew.length, pHigh.length); i++) {
+        const n1 = pNew[i] || 0;
+        const n2 = pHigh[i] || 0;
+        if (n1 < n2) { isLower = true; break; }
+        if (n1 > n2) { isLower = false; break; }
+      }
+      
+      if (isLower) {
+        setVersionError(`Version must be higher than the current latest version (${highestVersion.version}).`);
+        return;
+      }
+    }
+
+    setVersionError(null);
+  }, [versionName, versions]);
 
   useEffect(() => {
     fetchRegions();
@@ -95,20 +146,12 @@ function App() {
 
   const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedRegion || isUploading) return;
+    if (!selectedRegion || isUploading || versionError) return;
     setIsUploading(true);
     
     let actualVersionName = versionName;
     if (!/^v/i.test(actualVersionName)) {
       actualVersionName = 'v' + actualVersionName;
-    }
-
-    // Client-side duplicate check
-    const isDuplicate = versions.some((v: MapVersion) => v.version.toLowerCase() === actualVersionName.toLowerCase());
-    if (isDuplicate) {
-      alert(`Version "${actualVersionName}" already exists. Please use a unique version name.`);
-      setIsUploading(false);
-      return;
     }
 
     const formData = new FormData();
@@ -379,19 +422,48 @@ function App() {
                           <p className="text-gray-900">{v.coordinate_system || '—'}</p>
                         </div>
                       </div>
-
-                      {/* Phase 3: Smart Diff & Impact Analysis (Mock) */}
+                                            {/* Phase 3: Smart Diff Analysis */}
                       <div className="mt-4 bg-blue-50/50 border border-blue-100 p-3 rounded-lg">
                         <div className="flex items-center gap-2 mb-2">
                           <svg className="w-4 h-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
                           <span className="text-xs font-bold text-blue-900 uppercase tracking-wider">Smart Diff Analysis</span>
                         </div>
                         <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
-                          {v.description ? <li>{v.description}</li> : <li>Sự thay đổi dữ liệu: Đã phát hiện 02 làn đường mới, mật độ PCD thay đổi 15%.</li>}
-                          <li>Trạng thái liên kết: OSM và PCD đã được align thành công.</li>
+                          {v.analysis?.isInitial ? (
+                            <>
+                              <li>Initial Map Region Dataset upload detected.</li>
+                              <li>Lanelet Elements: {v.analysis?.osmNodesDiff} nodes, {v.analysis?.osmWaysDiff} ways.</li>
+                              <li>Status: OSM and PCD have been uploaded securely.</li>
+                            </>
+                          ) : v.analysis ? (
+                            <>
+                              <li>
+                                Lanelet Layout Change: 
+                                <span className={v.analysis.osmNodesDiff > 0 ? 'text-green-600 font-bold ml-1' : v.analysis.osmNodesDiff < 0 ? 'text-red-500 font-bold ml-1' : 'ml-1'}>
+                                  {v.analysis.osmNodesDiff > 0 ? '+' : ''}{v.analysis.osmNodesDiff} nodes
+                                </span>, 
+                                <span className={v.analysis.osmWaysDiff > 0 ? 'text-green-600 font-bold ml-1' : v.analysis.osmWaysDiff < 0 ? 'text-red-500 font-bold ml-1' : 'ml-1'}>
+                                  {v.analysis.osmWaysDiff > 0 ? '+' : ''}{v.analysis.osmWaysDiff} ways
+                                </span>
+                              </li>
+                              {v.analysis.pcdSizeDiffPercent !== undefined && v.analysis.pcdSizeDiffPercent !== 0 && (
+                                <li>
+                                  PCD Point Density Change: 
+                                  <span className={v.analysis.pcdSizeDiffPercent > 0 ? 'text-green-600 font-bold ml-1' : 'text-red-500 font-bold ml-1'}>
+                                    {v.analysis.pcdSizeDiffPercent > 0 ? '+' : ''}{v.analysis.pcdSizeDiffPercent}%
+                                  </span>
+                                </li>
+                              )}
+                              {v.description && <li>Notes: {v.description}</li>}
+                            </>
+                          ) : (
+                            <>
+                              {v.description ? <li>{v.description}</li> : <li>Sự thay đổi dữ liệu: Không có meta-data cho phiên bản này.</li>}
+                              <li>Trạng thái liên kết: OSM và PCD đã được align thành công.</li>
+                            </>
+                          )}
                         </ul>
                       </div>
-
                       {/* Phase 3: Release & Rollback actions */}
                       <div className="mt-4 flex items-center justify-end gap-3 pt-4 border-t border-gray-100">
                         {v.status !== 'STABLE' && (
@@ -438,10 +510,16 @@ function App() {
                   type="text" 
                   required
                   placeholder="e.g. 1.1 or v1.1"
-                  className="w-full border-gray-300 border rounded-md shadow-sm py-2 px-3 text-sm focus:border-blue-500 focus:ring-blue-500"
+                  className={`w-full border rounded-md shadow-sm py-2 px-3 text-sm outline-none transition-colors ${versionError ? 'border-red-500 focus:border-red-500 focus:ring-1 focus:ring-red-500' : 'border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500'}`}
                   value={versionName} 
                   onChange={(e) => setVersionName(e.target.value)} 
                 />
+                {versionError && (
+                  <p className="mt-1.5 text-xs text-red-500 font-medium flex items-center gap-1">
+                    <AlertTriangle className="w-3 h-3" />
+                    {versionError}
+                  </p>
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -527,7 +605,7 @@ function App() {
                 <button type="button" onClick={() => setShowUploadModal(false)} className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50">
                   Cancel
                 </button>
-                <button type="submit" disabled={isUploading} className="px-4 py-2 text-sm font-medium text-white bg-gray-900 border border-transparent rounded-md shadow-sm hover:bg-gray-800 focus:outline-none">
+                <button type="submit" disabled={isUploading || !!versionError} className={`px-4 py-2 text-sm font-medium text-white border border-transparent rounded-md shadow-sm focus:outline-none transition-all ${isUploading || versionError ? 'bg-gray-400 cursor-not-allowed' : 'bg-gray-900 hover:bg-gray-800'}`}>
                   {isUploading ? 'Uploading...' : 'Confirm Upload'}
                 </button>
               </div>

@@ -22,6 +22,7 @@ export interface MapVersion {
     mgrs_zone?: string;
     coordinate_system?: string;
     description?: string;
+    analysis?: Record<string, any>;
     downloads: Record<string, string>;
 }
 
@@ -32,4 +33,4 @@ export interface Stats {
 }
 
 export const getLaneletPreviewUrl = (vId: string) => `${API_URL}/previews/${vId}/lanelet`;
-export const getPcdPreviewUrl = (vId: string) => `${API_URL}/downloads/${vId}/PCD`;
+export const getPcdPreviewUrl = (vId: string) => `${API_URL}/previews/${vId}/pcd`;

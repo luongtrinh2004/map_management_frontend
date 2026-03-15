@@ -1,49 +1,44 @@
 # 🎨 AD Map Management Console (React + Vite)
 
-Giao diện quản trị hiện đại, chuyên nghiệp dành cho hệ thống quản lý bản đồ xe tự hành (AD Map System). Được thiết kế để tối ưu hóa trải nghiệm người dùng trong việc quản lý, theo dõi và cập nhật dữ liệu bản đồ.
+Giao diện quản trị hiện đại, chuyên nghiệp dành cho hệ thống quản lý bản đồ xe tự hành. Cho phép preview nhanh 2D/3D, quản lý version và theo sát tiến độ mapping.
 
 ## 📌 Tổng quan dự án (Project Overview)
-Frontend đóng vai trò là bảng điều khiển (Dashboard) chính, cho phép quản trị viên xem danh sách các khu vực (Regions) và lịch sử các phiên bản bản đồ (Versions). Giao diện tập trung vào sự tối giản, hiệu quả và tốc độ.
+Frontend là trung tâm điều phối, cung cấp khả năng trực quan hóa dữ liệu HD Map (Lanelet2) và Point Cloud (PCD). Giao diện tối ưu cho Mapping Team upload và Developers preview chất lượng dữ liệu.
 
 ## 🛠 Công nghệ sử dụng (Tech Stack)
 - **Framework:** React 18+ (Vite)
-- **Styling:** Tailwind CSS (Modern & Responsive)
-- **State Management:** React Hooks (useState, useEffect)
-- **API Client:** Axios
-- **Iconography:** Heroicons / Lucide React
-- **Typography:** Inter (Google Fonts)
+- **Visualization:**
+  - **Deck.gl:** Render Lanelet Map (GeoJSON) mượt mà với GPU.
+  - **Three.js:** Visualizer dữ liệu Point Cloud 3D với hiệu ứng đổ màu theo độ cao.
+  - **Mapbox GL:** Nền bản đồ vệ tinh/light chuẩn xác.
+- **Styling:** Tailwind CSS (Glassmorphism & High-tech UI)
+- **Iconography:** Lucide React
 
-## ✅ Các tính năng đã hoàn thành (Achievements)
-1.  **Giao diện Premium:** Thiết kế Dashboard chuyên nghiệp với thanh Sidebar điều hướng thông minh.
-2.  **Quản lý Khu vực (Region):** Tạo mới và chọn vùng bản đồ cần quản lý một cách trực quan.
-3.  **Lịch sử Phiên bản:** Hiển thị danh sách các bản đồ đã tải lên dưới dạng Card với đầy đủ Metadata (Creator, UTM Zone, MGRS, ...).
-4.  **Workflow Upload Nâng cao:** Modal upload file hỗ trợ chọn file đa định dạng (.osm, .pcd) cùng lúc.
-5.  **Tải xuống Tiện lợi:** Các nút download được tích hợp trực tiếp trên từng phiên bản bản đồ.
-6.  **Xử lý Lỗi & ID:** Đã xử lý triệt để các lỗi so sánh ID (ObjectId) và hiển thị trạng thái chọn vùng trong sidebar.
-7.  **Sửa lỗi Code & UI:** Loại bỏ hoàn toàn lỗi "mất chữ" và lỗi TypeScript gạch đỏ trong code nguồn.
-8.  **Favicon:** Cấu hình chuẩn hình ảnh đại diện của ứng dụng trên trình duyệt.
+## ✅ Tiến độ hiện tại (Phase 1 & 2 Status)
+
+### Phase 1: Core Portal (Hoàn thành 100%)
+- [x] **Dashboard Thống kê:** View tổng quan Region, Version và Last Update.
+- [x] **Quản lý Region & Version:** Sidebar điều hướng mượt mà, modal upload thông minh.
+- [x] **Metadata Viewer:** Hiển thị thông tin UTM, MGRS, Coordinate System chi tiết.
+- [x] **Version Control UI:** Đánh dấu Stable version, Rollback phiên bản chỉ với 1 click.
+
+### Phase 2: High-Tech Preview (Hoàn thành 100%)
+- [x] **2D Lanelet Viewer:** Hiển thị lane boundaries (xanh), stop lines (đỏ), centerlines cực nét.
+- [x] **3D Pointcloud Viewer:** Xem PCD mượt mà nhờ cơ chế downsampling, hỗ trợ xoay/phóng không gian 3D.
+- [x] **Auto-Focus Engine:** Tự động "fly-to" vùng bản đồ ngay khi mở preview.
+
+### Phase 3: Visual Analytics (Đang thực hiện - 20%)
+- [x] **Diff Analysis Card:** Hiển thị biến động Node/Way và mật độ Point Cloud trực quan.
+- [ ] **Visual Diff Map:** Hiển thị màu sắc khác biệt các lane mới/cũ trên bản đồ.
 
 ## 🚀 Hướng dẫn cài đặt & Chạy
-1.  **Cài đặt dependencies:**
-    ```bash
-    npm install
-    ```
-2.  **Chạy ứng dụng (Development):**
-    ```bash
-    npm run dev
-    ```
-3.  **Build Production:**
-    ```bash
-    npm run build
-    ```
-    Ứng dụng mặc định chạy tại: `http://localhost:5173` (hoặc cấu hình theo Vite).
+1. **Cài đặt dependencies:** `npm install`
+2. **Chạy ứng dụng (Dev):** `npm run dev` (Mặc định: `http://localhost:5173`)
 
-## 📅 Mục tiêu sắp tới (Roadmap)
-- [ ] **2D Map Visualizer:** Hiển thị trực tiếp dữ liệu Lanelet2 (.osm) lên giao diện Web bằng Deck.gl hoặc Mapbox.
-- [ ] **3D Pointcloud Viewer:** Tích hợp trình xem dữ liệu 3D .pcd ngay trên Dashboard.
-- [ ] **Map Comparison:** So sánh sự thay đổi giữa hai phiên bản bản đồ khác nhau.
-- [ ] **Advanced Filtering:** Lọc phiên bản theo ngày tháng, người tạo hoặc trạng thái (Stable/Beta).
-- [ ] **Dark Mode Support:** Cung cấp giao diện tối cho môi trường vận hành thiếu sáng.
+## 📅 Kế hoạch phát triển (Roadmap)
+- [ ] **Map Validation UI:** Hiển thị các điểm hở lane hoặc lỗi logic trực tiếp trên map.
+- [ ] **Advanced Filter:** Lọc bản đồ theo khu vực địa lý trên bản đồ tổng.
+- [ ] **Dark Mode:** Giao diện tối chuyên sâu cho Operational Center.
 
 ---
 *Phát triển bởi Đội ngũ Mapping System - 2026*

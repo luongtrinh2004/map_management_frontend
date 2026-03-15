@@ -45,7 +45,7 @@ const MapPreview: React.FC<MapPreviewProps> = ({
 
   // Loading & Error States
   const [loading, setLoading] = useState(true);
-  const [loadingMsg, setLoadingMsg] = useState("Initializing Engine...");
+  const [loadingMsg, setLoadingMsg] = useState("Đang khởi tạo Engine...");
   const [error, setError] = useState<string | null>(null);
 
   // 2D View State
@@ -65,7 +65,7 @@ const MapPreview: React.FC<MapPreviewProps> = ({
   useEffect(() => {
     let isMounted = true;
     setLoading(true);
-    setLoadingMsg("Fetching Maps Data...");
+    setLoadingMsg("Đang lấy dữ liệu bản đồ...");
 
     fetch(getLaneletPreviewUrl(versionId))
       .then((r) => r.json())
@@ -103,7 +103,7 @@ const MapPreview: React.FC<MapPreviewProps> = ({
       })
       .catch(() => {
         if (!isMounted) return;
-        setError("Failed to load map assets");
+        setError("Không thể tải bộ dữ liệu bản đồ");
         setLoading(false);
       });
 
@@ -120,7 +120,7 @@ const MapPreview: React.FC<MapPreviewProps> = ({
     const init3D = () => {
       is3DInit.current = true;
       setLoading(true);
-      setLoadingMsg("Downloading Optimized PCD...");
+      setLoadingMsg("Đang tải xuống PCD đã tối ưu...");
 
       const container = threeContainerRef.current!;
       const scene = new THREE.Scene();
@@ -212,11 +212,11 @@ const MapPreview: React.FC<MapPreviewProps> = ({
         },
         (xhr) =>
           setLoadingMsg(
-            `Downloading PCD (${Math.round((xhr.loaded / (xhr.total || 1)) * 100)}%)...`,
+            `Đang tải xuống PCD (${Math.round((xhr.loaded / (xhr.total || 1)) * 100)}%)...`,
           ),
         (err) => {
           console.error("3D Loading Error:", err);
-          setError("Failed to load 3D data");
+          setError("Không thể tải dữ liệu 3D");
           setLoading(false);
         },
       );
@@ -341,7 +341,7 @@ const MapPreview: React.FC<MapPreviewProps> = ({
                 className={`flex items-center gap-2 px-5 py-2 rounded-lg text-xs font-bold transition-all duration-300 ${viewMode === "3D" ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
               >
                 <Box className="w-4 h-4" />
-                3D Cloud
+                Đám mây 3D
               </button>
             </div>
             <div className="h-8 w-px bg-slate-200 mx-1"></div>
@@ -369,7 +369,7 @@ const MapPreview: React.FC<MapPreviewProps> = ({
                     {loadingMsg}
                   </p>
                   <p className="text-xs text-slate-500 text-center max-w-[250px]">
-                    Applying Voxel Grid Downsampling & Stream processing
+                    Đang áp dụng Voxel Grid Downsampling & xử lý luồng
                   </p>
                 </div>
               </div>
@@ -384,7 +384,7 @@ const MapPreview: React.FC<MapPreviewProps> = ({
                   <AlertTriangle className="w-10 h-10 text-red-500 relative z-10" />
                 </div>
                 <h4 className="text-2xl font-bold text-slate-900 mb-2">
-                  Render Error
+                  Lỗi hiển thị
                 </h4>
                 <p className="text-sm text-slate-500 mb-8 leading-relaxed">
                   {error}
@@ -393,7 +393,7 @@ const MapPreview: React.FC<MapPreviewProps> = ({
                   onClick={onClose}
                   className="px-8 py-3 bg-red-500 hover:bg-red-600 transition-colors text-white rounded-xl font-bold shadow-lg shadow-red-200"
                 >
-                  Close Visualizer
+                  Đóng trình xem
                 </button>
               </div>
             </div>

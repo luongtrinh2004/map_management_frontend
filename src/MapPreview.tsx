@@ -120,7 +120,7 @@ const MapPreview: React.FC<MapPreviewProps> = ({
     const init3D = () => {
       is3DInit.current = true;
       setLoading(true);
-      setLoadingMsg("Đang tải xuống PCD đã tối ưu...");
+      setLoadingMsg("Đang load bản đồ 3D...");
 
       const container = threeContainerRef.current!;
       const scene = new THREE.Scene();
@@ -341,7 +341,7 @@ const MapPreview: React.FC<MapPreviewProps> = ({
                 className={`flex items-center gap-2 px-5 py-2 rounded-lg text-xs font-bold transition-all duration-300 ${viewMode === "3D" ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
               >
                 <Box className="w-4 h-4" />
-                Đám mây 3D
+                3D Map
               </button>
             </div>
             <div className="h-8 w-px bg-slate-200 mx-1"></div>
@@ -369,7 +369,7 @@ const MapPreview: React.FC<MapPreviewProps> = ({
                     {loadingMsg}
                   </p>
                   <p className="text-xs text-slate-500 text-center max-w-[250px]">
-                    Đang áp dụng Voxel Grid Downsampling & xử lý luồng
+                    Xin vui lòng chờ trong giây lát...
                   </p>
                 </div>
               </div>

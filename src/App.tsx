@@ -10,7 +10,17 @@ import {
   ChevronLeft,
   ChevronRight,
   AlertTriangle,
+  CheckCircle,
+  AlertCircle,
+  Info,
+  X as XIcon,
 } from "lucide-react";
+
+interface Notification {
+  id: string;
+  message: string;
+  type: "success" | "error" | "info";
+}
 
 function App() {
   const [regions, setRegions] = useState<Region[]>([]);
@@ -43,6 +53,41 @@ function App() {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [versionError, setVersionError] = useState<string | null>(null);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+
+  const notify = (
+    message: string,
+    type: "success" | "error" | "info" = "info",
+  ) => {
+    const id = Math.random().toString(36).substring(2, 9);
+    setNotifications((prev) => [...prev, { id, message, type }]);
+
+    // Auto-remove after 5 seconds
+    setTimeout(() => {
+      setNotifications((prev) => prev.filter((n) => n.id !== id));
+    }, 5000);
+  };
+
+  // Custom Confirmation Modal State
+  const [confirmModal, setConfirmModal] = useState<{
+    show: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+  }>({
+    show: false,
+    title: "",
+    message: "",
+    onConfirm: () => {},
+  });
+
+  const confirmAction = (
+    title: string,
+    message: string,
+    onConfirm: () => void,
+  ) => {
+    setConfirmModal({ show: true, title, message, onConfirm });
+  };
 
   useEffect(() => {
     if (!versionName) {
@@ -163,8 +208,9 @@ function App() {
       await fetchRegions();
       await fetchStats();
       setSelectedRegion(res.data);
+      notify("Đã tạo khu vực mới thành công!", "success");
     } catch {
-      alert("Không thể tạo khu vực.");
+      notify("Không thể tạo khu vực.", "error");
     }
   };
 
@@ -210,7 +256,7 @@ function App() {
         err.response?.data?.message ||
         err.response?.data?.error ||
         "Tải lên thất bại. Vui lòng kiểm tra nhật ký backend.";
-      alert(errorMsg);
+      notify(errorMsg, "error");
     } finally {
       setIsUploading(false);
       setUploadProgress(0);
@@ -221,25 +267,30 @@ function App() {
     try {
       await api.post(`/versions/${versionId}/status`, { status: "STABLE" });
       if (selectedRegion) fetchVersions(selectedRegion.code);
+      notify("Đã đánh dấu phiên bản ổn định.", "success");
     } catch (err) {
-      alert("Không thể cập nhật trạng thái.");
+      notify("Không thể cập nhật trạng thái.", "error");
     }
   };
 
-  const handleRollback = async (versionId: string) => {
-    if (
-      !window.confirm(
-        "Bạn có chắc chắn muốn khôi phục về phiên bản này? Một phiên bản mới sẽ được tạo ra.",
-      )
-    )
-      return;
-    try {
-      await api.post(`/versions/${versionId}/rollback`);
-      if (selectedRegion) fetchVersions(selectedRegion.code);
-      fetchStats();
-    } catch (err: any) {
-      alert(err.response?.data?.message || "Không thể khôi phục phiên bản.");
-    }
+  const handleRollback = (versionId: string) => {
+    confirmAction(
+      "Xác nhận khôi phục",
+      "Bạn có chắc chắn muốn khôi phục về phiên bản này? Một phiên bản mới sẽ được tạo ra dựa trên dữ liệu hiện tại của bản này.",
+      async () => {
+        try {
+          await api.post(`/versions/${versionId}/rollback`);
+          if (selectedRegion) fetchVersions(selectedRegion.code);
+          fetchStats();
+          notify("Đã khôi phục phiên bản thành công.", "success");
+        } catch (err: any) {
+          notify(
+            err.response?.data?.message || "Không thể khôi phục phiên bản.",
+            "error",
+          );
+        }
+      },
+    );
   };
 
   const resetUploadForm = () => {
@@ -255,6 +306,111 @@ function App() {
 
   return (
     <div className="h-screen w-full bg-white text-gray-900 font-sans flex overflow-hidden">
+      {/* Premium Notifications Portal */}
+      <div className="fixed top-8 right-8 z-[100] flex flex-col gap-4 w-96 pointer-events-none">
+        {notifications.map((n) => (
+          <div
+            key={n.id}
+            className={`pointer-events-auto flex items-stretch gap-0 rounded-2xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)] border overflow-hidden animate-in slide-in-from-right fade-in duration-300 ${
+              n.type === "success"
+                ? "bg-white border-emerald-100"
+                : n.type === "error"
+                  ? "bg-white border-rose-100"
+                  : "bg-white border-blue-100"
+            }`}
+          >
+            <div
+              className={`w-1.5 shrink-0 ${
+                n.type === "success"
+                  ? "bg-emerald-500"
+                  : n.type === "error"
+                    ? "bg-rose-500"
+                    : "bg-blue-500"
+              }`}
+            />
+
+            <div className="flex-1 flex items-start gap-4 p-5">
+              <div
+                className={`mt-0.5 p-2 rounded-xl shrink-0 ${
+                  n.type === "success"
+                    ? "bg-emerald-50 text-emerald-600"
+                    : n.type === "error"
+                      ? "bg-rose-50 text-rose-600"
+                      : "bg-blue-50 text-blue-600"
+                }`}
+              >
+                {n.type === "success" && <CheckCircle className="w-5 h-5" />}
+                {n.type === "error" && <AlertCircle className="w-5 h-5" />}
+                {n.type === "info" && <Info className="w-5 h-5" />}
+              </div>
+
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-bold text-gray-900 mb-1">
+                  {n.type === "success"
+                    ? "Thành công"
+                    : n.type === "error"
+                      ? "Lỗi hệ thống"
+                      : "Thông báo"}
+                </p>
+                <p className="text-sm text-gray-600 leading-relaxed">
+                  {n.message}
+                </p>
+              </div>
+
+              <button
+                onClick={() =>
+                  setNotifications((prev) =>
+                    prev.filter((nt) => nt.id !== n.id),
+                  )
+                }
+                className="mt-0.5 p-1 rounded-lg hover:bg-gray-100 transition-colors text-gray-400"
+              >
+                <XIcon className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Modern Confirmation Modal */}
+      {confirmModal.show && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-8 pb-0 flex flex-col items-center text-center">
+              <div className="w-16 h-16 rounded-2xl bg-orange-50 text-orange-500 flex items-center justify-center mb-6">
+                <AlertTriangle className="w-8 h-8" />
+              </div>
+              <h3 className="text-xl font-black text-gray-900 mb-2">
+                {confirmModal.title}
+              </h3>
+              <p className="text-sm text-gray-500 leading-relaxed font-medium">
+                {confirmModal.message}
+              </p>
+            </div>
+
+            <div className="p-8 flex gap-3">
+              <button
+                onClick={() =>
+                  setConfirmModal({ ...confirmModal, show: false })
+                }
+                className="flex-1 px-6 py-3 rounded-2xl bg-gray-50 text-gray-600 text-sm font-bold hover:bg-gray-100 transition-colors"
+              >
+                Hủy bỏ
+              </button>
+              <button
+                onClick={() => {
+                  confirmModal.onConfirm();
+                  setConfirmModal({ ...confirmModal, show: false });
+                }}
+                className="flex-1 px-6 py-3 rounded-2xl bg-orange-500 text-white text-sm font-bold shadow-lg shadow-orange-200 hover:bg-orange-600 transition-all hover:scale-105 active:scale-95"
+              >
+                Xác nhận
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Sidebar Overlay on Mobile */}
       {!isSidebarOpen && (
         <div
@@ -320,7 +476,7 @@ function App() {
               </button>
             </div>
 
-            <nav className="space-y-1">
+            <nav className="space-y-2">
               {regions.length === 0 ? (
                 <p className="text-sm text-gray-500 px-2 mt-2">
                   Không tìm thấy khu vực nào.
@@ -334,16 +490,27 @@ function App() {
                       setIsHomePage(false);
                       if (window.innerWidth < 768) setIsSidebarOpen(false);
                     }}
-                    className={`w-full text-left flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+                    className={`w-full text-left flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all duration-300 group ${
                       !isHomePage && selectedRegion?.id === r.id
-                        ? "bg-indigo-600 text-white shadow-lg shadow-indigo-100 scale-105"
-                        : "text-gray-600 hover:bg-white hover:shadow-sm hover:text-indigo-600"
+                        ? "bg-white text-indigo-600 shadow-[0_10px_20px_-5px_rgba(79,70,229,0.15)] ring-1 ring-indigo-50"
+                        : "text-gray-500 hover:bg-white hover:text-indigo-600 hover:shadow-sm"
                     }`}
                   >
-                    <MapPin
-                      className={`w-4 h-4 shrink-0 ${!isHomePage && selectedRegion?.id === r.id ? "text-white" : "text-gray-400"}`}
-                    />
-                    <span className="truncate">{r.name}</span>
+                    <div
+                      className={`p-2 rounded-xl transition-colors ${
+                        !isHomePage && selectedRegion?.id === r.id
+                          ? "bg-indigo-50 text-indigo-600"
+                          : "bg-gray-100 text-gray-400 group-hover:bg-indigo-50 group-hover:text-indigo-400"
+                      }`}
+                    >
+                      <MapPin className="w-4 h-4 shrink-0" />
+                    </div>
+                    <span className="truncate flex-1 text-[13px] tracking-tight">
+                      {r.name}
+                    </span>
+                    {!isHomePage && selectedRegion?.id === r.id && (
+                      <div className="w-1.5 h-1.5 rounded-full bg-indigo-600 animate-pulse" />
+                    )}
                   </button>
                 ))
               )}
@@ -441,8 +608,9 @@ function App() {
               </div>
               <button
                 onClick={() => setShowUploadModal(true)}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-sm shadow-indigo-200 transition-all hover:-translate-y-0.5"
+                className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-2xl text-sm font-black shadow-lg shadow-indigo-100 transition-all hover:-translate-y-1 active:scale-95 flex items-center gap-2"
               >
+                <Plus className="w-4 h-4" />
                 Upload Version
               </button>
             </header>
@@ -492,16 +660,18 @@ function App() {
                           </p>
                         </div>
                         <div className="flex gap-2">
-                          {Object.entries(v.downloads || {}).map(([type, url]) => (
-                            <a
-                              key={type}
-                              href={url}
-                              download
-                              className="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
-                            >
-                              Download {type}
-                            </a>
-                          ))}
+                          {Object.entries(v.downloads || {}).map(
+                            ([type, url]) => (
+                              <a
+                                key={type}
+                                href={url}
+                                download
+                                className="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+                              >
+                                Download {type}
+                              </a>
+                            ),
+                          )}
                           <button
                             onClick={() => setPreviewVersion(v)}
                             className="inline-flex items-center px-3 py-1.5 border border-blue-200 shadow-sm text-xs font-medium rounded text-blue-700 bg-blue-50 hover:bg-blue-100 focus:outline-none transition-colors"
@@ -649,22 +819,30 @@ function App() {
                           )}
                         </div>
                       </div>
-                      <div className="mt-4 flex items-center justify-end gap-3 pt-4 border-t border-gray-100">
+                      <div className="mt-6 flex items-center justify-end gap-3 pt-5 border-t border-gray-100">
                         {v.status !== "STABLE" && (
                           <button
                             onClick={() => handleMarkStable(v.id)}
-                            className="text-sm font-medium text-green-600 hover:text-green-700 hover:bg-green-50 px-3 py-1.5 rounded-md transition-colors border border-transparent hover:border-green-200"
+                            className="text-xs font-bold text-emerald-600 hover:text-white hover:bg-emerald-500 px-4 py-2 rounded-xl transition-all border border-emerald-200 hover:border-emerald-500 active:scale-95"
                           >
-                            ✓ Đánh dấu là ổn định
+                            ✓ Đánh dấu ổn định
                           </button>
                         )}
-                        {v.status === "STABLE" && (
+                        {/* Hidden for the latest version (i === 0) */}
+                        {v.status === "STABLE" && i !== 0 && (
                           <button
                             onClick={() => handleRollback(v.id)}
-                            className="text-sm font-medium text-orange-600 hover:text-orange-700 hover:bg-orange-50 px-3 py-1.5 rounded-md transition-colors border border-transparent hover:border-orange-200"
+                            className="text-xs font-bold text-orange-600 hover:text-white hover:bg-orange-500 px-4 py-2 rounded-xl transition-all border border-orange-200 hover:border-orange-500 active:scale-95 flex items-center gap-1.5"
                           >
-                            ↺ Khôi phục từ bản này
+                            <Clock className="w-3.5 h-3.5" />
+                            Khôi phục bản này
                           </button>
+                        )}
+                        {i === 0 && (
+                          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-50 text-indigo-600 text-[10px] font-black uppercase tracking-widest border border-indigo-100 shadow-sm">
+                            <Activity className="w-3 h-3" />
+                            Phiên bản mới nhất
+                          </div>
                         )}
                       </div>
                     </div>
@@ -694,7 +872,7 @@ function App() {
           <div className="bg-white rounded-lg shadow-xl w-full max-w-md overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
               <h3 className="text-lg font-medium text-gray-900">
-                Tải lên cho {selectedRegion.name}
+                Tải lên cho {selectedRegion?.name}
               </h3>
               <button
                 onClick={() => setShowUploadModal(false)}
@@ -819,9 +997,17 @@ function App() {
                       <input
                         type="file"
                         className="hidden"
-                        onChange={(e) =>
-                          setOsmFile(e.target.files?.[0] || null)
-                        }
+                        accept=".osm"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0] || null;
+                          if (file && !file.name.toLowerCase().endsWith(".osm")) {
+                            notify("Tệp bản đồ 2D phải có định dạng .osm", "error");
+                            e.target.value = "";
+                            setOsmFile(null);
+                            return;
+                          }
+                          setOsmFile(file);
+                        }}
                       />
                     </label>
                   </div>
@@ -837,9 +1023,17 @@ function App() {
                       <input
                         type="file"
                         className="hidden"
-                        onChange={(e) =>
-                          setPcdFile(e.target.files?.[0] || null)
-                        }
+                        accept=".pcd"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0] || null;
+                          if (file && !file.name.toLowerCase().endsWith(".pcd")) {
+                            notify("Tệp bản đồ 3D phải có định dạng .pcd", "error");
+                            e.target.value = "";
+                            setPcdFile(null);
+                            return;
+                          }
+                          setPcdFile(file);
+                        }}
                       />
                     </label>
                   </div>
@@ -963,8 +1157,8 @@ function App() {
       {/* Map Preview Modal */}
       {previewVersion && (
         <MapPreview
-          versionId={previewVersion.id}
-          versionName={previewVersion.version}
+          versionId={previewVersion?.id || ""}
+          versionName={previewVersion?.version || ""}
           onClose={() => setPreviewVersion(null)}
         />
       )}

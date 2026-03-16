@@ -730,7 +730,7 @@ function App() {
                           {v.analysis?.isInitial ? (
                             <div className="flex items-center gap-3">
                               <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 shrink-0">
-                                <Plus className="w-5 h-5" />
+                                <CheckCircle className="w-5 h-5" />
                               </div>
                               <div>
                                 <h4 className="text-xs font-bold text-slate-900 leading-tight">
